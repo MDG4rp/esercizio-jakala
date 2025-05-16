@@ -17,30 +17,43 @@ export default function Login() {
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError("");
+    if (!email || !password) {
+      setError("Tutti i campi sono obbligatori.");
+      return;
+    }
+    if (!email.includes("@")) {
+      setError("Email non valida.");
+      return;
+    }
+    if (password.length < 6) {
+      setError("La password deve essere di almeno 6 caratteri.");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       const data = await login(email, password);
-      console.log("Token JWT:", data.token);
       dispatch(
         loginSuccess({ token: data.token, refreshToken: data.refreshToken })
       );
+
       Cookies.set("token", data.token, {
-        expires: 1, // 1 giorno
+        expires: 1, // scade dopo 1 giorno
+        secure: true,
+        sameSite: "Strict",
+      });
+      Cookies.set("refreshToken", data.refreshToken, {
+        expires: 7, // scade dopo una settimana
         secure: true,
         sameSite: "Strict",
       });
 
-      Cookies.set("refreshToken", data.refreshToken, {
-        expires: 7, // 7 giorni
-        secure: true,
-        sameSite: "Strict",
-      });
       navigate("/dashboard");
     } catch (err) {
       setError((err as Error).message);
     } finally {
-      setIsLoading(false); // Riabilito il bottone
+      setIsLoading(false);
     }
   };
 
@@ -55,7 +68,7 @@ export default function Login() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            disabled={isLoading} //  Disabilito durante il loading
+            disabled={isLoading}
           />
         </label>
         <label>
@@ -65,7 +78,7 @@ export default function Login() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            disabled={isLoading} // Disabilito durante il loading
+            disabled={isLoading}
           />
         </label>
         {error && <p className="error-message">{error}</p>}
